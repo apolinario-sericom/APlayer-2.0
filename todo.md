@@ -1,0 +1,63 @@
+# Project TODO
+
+- [x] Configurar a identidade visual escura do Melodia e navegação em abas.
+- [x] Criar modelos de dados locais para músicas, metadados personalizados, letras, fila e playlists.
+- [x] Implementar o estado persistente da biblioteca e das preferências com AsyncStorage.
+- [x] Implementar importação de arquivos de áudio pelo seletor de documentos do dispositivo.
+- [x] Implementar leitura da biblioteca de mídia quando a plataforma oferecer acesso compatível.
+- [x] Implementar reprodução de áudio, fila, busca, reprodução aleatória e repetição.
+- [x] Construir as telas Início, Biblioteca, Player, Letras, Playlists e Configurações.
+- [x] Implementar edição local de apelido, artista, álbum, capa e letra de músicas.
+- [x] Implementar letras com marcações de tempo locais e destaque da linha durante a reprodução.
+- [x] Implementar playlists ilimitadas com criação, edição de título/capa e gerenciamento de faixas.
+- [x] Criar e aplicar ícone próprio do Melodia às configurações e assets do aplicativo.
+- [x] Criar testes unitários e validar o projeto com verificação de tipos e lint.
+- [x] Revisar todos os fluxos, verificar acessibilidade e preparar a versão final.
+- [x] Excluir automaticamente áudios de mensageiros e pastas não musicais da descoberta da biblioteca.
+- [x] Garantir reprodução exclusiva, interrompendo e liberando a faixa anterior antes de iniciar outra.
+- [x] Renomear a identidade visível do aplicativo de Melodia para APlayer.
+- [x] Criar testes de regressão para filtragem de áudio e troca de faixas.
+- [x] Validar e salvar a atualização do APlayer.
+- [x] Criar uma área para revisar e ocultar faixas importadas sem apagar os arquivos originais.
+- [x] Reforçar a exclusão de áudios do WhatsApp e de notas de voz na descoberta automática.
+- [x] Adicionar um equalizador simples com perfis locais de áudio.
+- [x] Adicionar temporizador de desligamento da reprodução.
+- [x] Permitir selecionar locais e pastas aprovados para a descoberta automática.
+- [x] Criar testes de regressão para filtros, ocultação, timer e perfis de equalização.
+- [x] Validar e salvar a expansão do APlayer.
+- [x] Criar cinco temas de cor persistentes e uma escolha visual nos ajustes.
+- [x] Adicionar botão de favoritos em cada faixa e uma coleção dedicada de músicas favoritas.
+- [x] Configurar reprodução em segundo plano, com tela desligada, e controles de tela bloqueada.
+- [x] Criar testes de regressão para temas e favoritos e validar as configurações de áudio nativo.
+- [x] Validar e salvar a atualização de temas, favoritos e reprodução em segundo plano.
+- [x] Identificar e remover a causa da falha de compilação introduzida na última atualização.
+- [x] Preservar reprodução em segundo plano com a integração compatível ao build Android.
+- [x] Validar a configuração nativa Android e salvar a versão corrigida para geração do APK.
+- [x] Investigar e corrigir a falha de instalação de dependências no empacotamento Android.
+- [x] Validar uma instalação limpa reproduzível antes de salvar a versão para geração do APK.
+- [x] Criar seleção múltipla e ocultação em massa de faixas sem alterar playlists existentes.
+- [x] Reforçar o bloqueio automático de áudios do WhatsApp e notas de voz, incluindo itens já descobertos.
+- [x] Separar a pesquisa de músicas nas fontes aprovadas da adição opcional à biblioteca.
+- [x] Criar testes de regressão para seleção em massa, filtro de WhatsApp e pesquisa sem importação.
+- [x] Validar e salvar a atualização de organização da biblioteca.
+- [x] Trocar os controles de retroceder/avançar segundos da tela bloqueada por faixa anterior/próxima faixa.
+- [x] Corrigir o avanço automático para a próxima música ao término da faixa atual.
+- [x] Redesenhar a tela inicial com um resumo mais direto da biblioteca e da reprodução.
+- [x] Criar testes de regressão para os controles nativos e o avanço automático.
+- [x] Validar e salvar a atualização de controles e tela inicial.
+- [x] Corrigir a sessão de tela bloqueada para exibir play/pausa, faixa anterior e próxima faixa simultaneamente.
+- [x] Criar seleção múltipla diretamente na listagem da biblioteca.
+- [x] Permitir remover as faixas selecionadas da biblioteca sem excluir arquivos do dispositivo.
+- [x] Permitir adicionar as faixas selecionadas a uma playlist existente.
+- [x] Permitir criar uma playlist com as faixas selecionadas.
+- [x] Criar testes de regressão para os comandos nativos e as ações em massa da biblioteca.
+- [x] Validar e salvar a atualização de controles e seleção em massa.
+- [x] Identificar por que o APK Android ainda publica somente play/pausa na tela bloqueada.
+- [x] Corrigir o caminho nativo efetivamente empacotado para exibir anterior, play/pausa e próxima faixa.
+- [x] Validar a configuração de mídia Android e preparar um teste objetivo da tela bloqueada no dispositivo.
+- [x] Salvar a correção verificada dos controles completos de tela bloqueada.
+- [x] Investigar por que o dispositivo ainda recebe apenas play/pausa após a última correção nativa.
+- [x] Implementar uma sessão de mídia Android que exponha anterior, play/pausa e próxima faixa no painel bloqueado do dispositivo.
+- [x] Validar em configuração Android limpa e preparar um teste físico obrigatório da nova sessão.
+- [x] Revisar o uso do backend do modelo; ele não é chamado pelos fluxos locais do APlayer e foi mantido apenas como infraestrutura de publicação do projeto.
+- [x] Salvar a nova correção de tela bloqueada e a simplificação segura do projeto.

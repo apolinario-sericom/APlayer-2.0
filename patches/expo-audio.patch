@@ -1,0 +1,167 @@
+[1mdiff --git a/android/src/main/java/expo/modules/audio/AudioModule.kt b/android/src/main/java/expo/modules/audio/AudioModule.kt[m
+[1mindex 49a53af9352907c05e9f3dc823c0334739a1bf63..5da67e81ca8857dec283afa5a3d7b99171a1009f 100644[m
+[1m--- a/android/src/main/java/expo/modules/audio/AudioModule.kt[m
+[1m+++ b/android/src/main/java/expo/modules/audio/AudioModule.kt[m
+[36m@@ -176,9 +176,13 @@[m [mclass AudioModule : Module() {[m
+ [m
+   override fun definition() = ModuleDefinition {[m
+     Name("ExpoAudio")[m
+[32m+[m[32m    Events("lockScreenAction")[m
+ [m
+     OnCreate {[m
+       audioManager = appContext.reactContext?.getSystemService(Context.AUDIO_SERVICE) as AudioManager[m
+[32m+[m[32m      AudioControlsService.setActionListener { action ->[m
+[32m+[m[32m        sendEvent("lockScreenAction", mapOf("action" to action))[m
+[32m+[m[32m      }[m
+     }[m
+ [m
+     AsyncFunction("setAudioModeAsync") { mode: AudioMode ->[m
+[36m@@ -259,6 +263,7 @@[m [mclass AudioModule : Module() {[m
+     }[m
+ [m
+     OnDestroy {[m
+[32m+[m[32m      AudioControlsService.setActionListener(null)[m
+       appContext.mainQueue.launch {[m
+         releaseAudioFocus()[m
+         players.values.forEach {[m
+[1mdiff --git a/android/src/main/java/expo/modules/audio/AudioRecords.kt b/android/src/main/java/expo/modules/audio/AudioRecords.kt[m
+[1mindex 092af43b1c112008f324408f20b6737a184cbbce..295bc3016cde3356400d85d277bdc4c0f6f0bfb9 100644[m
+[1m--- a/android/src/main/java/expo/modules/audio/AudioRecords.kt[m
+[1m+++ b/android/src/main/java/expo/modules/audio/AudioRecords.kt[m
+[36m@@ -93,6 +93,8 @@[m [menum class LockScreenButtons(val value: Int) : Enumerable {[m
+ }[m
+ [m
+ class AudioLockScreenOptions([m
+[32m+[m[32m  @Field val showPrevious: Boolean,[m
+[32m+[m[32m  @Field val showNext: Boolean,[m
+   @Field val showSeekForward: Boolean,[m
+   @Field val showSeekBackward: Boolean[m
+ ) : Record[m
+[1mdiff --git a/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt b/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt[m
+[1mindex 04486e21da2f96bbfcfa00528fb2ac3d147acef3..0486345303c9f0853f0cf503cf969783d98c53c8 100644[m
+[1m--- a/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt[m
+[1m+++ b/android/src/main/java/expo/modules/audio/service/AudioControlsService.kt[m
+[36m@@ -136,13 +136,13 @@[m [mclass AudioControlsService : MediaSessionService() {[m
+     val session = mediaSession ?: return[m
+     val customLayout = mutableListOf<CommandButton>()[m
+ [m
+[31m-    // Add seek backward button if enabled[m
+[31m-    if (currentOptions?.showSeekBackward == true) {[m
+[32m+[m[32m    // Add the queue's previous-track control when requested by the host application.[m
+[32m+[m[32m    if (currentOptions?.showPrevious == true) {[m
+       customLayout.add([m
+         CommandButton.Builder(CommandButton.ICON_SKIP_BACK)[m
+[31m-          .setDisplayName("Seek Backward")[m
+[32m+[m[32m          .setDisplayName("Previous")[m
+           .setEnabled(true)[m
+[31m-          .setSessionCommand(SessionCommand(ACTION_SEEK_BACKWARD, Bundle.EMPTY))[m
+[32m+[m[32m          .setSessionCommand(SessionCommand(ACTION_SKIP_PREVIOUS, Bundle.EMPTY))[m
+           .build()[m
+       )[m
+     }[m
+[36m@@ -156,13 +156,13 @@[m [mclass AudioControlsService : MediaSessionService() {[m
+         .build()[m
+     )[m
+ [m
+[31m-    // Add seek forward button if enabled[m
+[31m-    if (currentOptions?.showSeekForward == true) {[m
+[32m+[m[32m    // Add the queue's next-track control when requested by the host application.[m
+[32m+[m[32m    if (currentOptions?.showNext == true) {[m
+       customLayout.add([m
+         CommandButton.Builder(CommandButton.ICON_SKIP_FORWARD)[m
+[31m-          .setDisplayName("Seek Forward")[m
+[32m+[m[32m          .setDisplayName("Next")[m
+           .setEnabled(true)[m
+[31m-          .setSessionCommand(SessionCommand(ACTION_SEEK_FORWARD, Bundle.EMPTY))[m
+[32m+[m[32m          .setSessionCommand(SessionCommand(ACTION_SKIP_NEXT, Bundle.EMPTY))[m
+           .build()[m
+       )[m
+     }[m
+[36m@@ -339,6 +339,8 @@[m [mclass AudioControlsService : MediaSessionService() {[m
+ [m
+     const val ACTION_SEEK_FORWARD = "expo.modules.audio.action.SEEK_FORWARD"[m
+     const val ACTION_SEEK_BACKWARD = "expo.modules.audio.action.SEEK_REWIND"[m
+[32m+[m[32m    const val ACTION_SKIP_NEXT = "expo.modules.audio.action.SKIP_NEXT"[m
+[32m+[m[32m    const val ACTION_SKIP_PREVIOUS = "expo.modules.audio.action.SKIP_PREVIOUS"[m
+ [m
+     const val SEEK_INTERVAL_MS = 10000L[m
+ [m
+[36m@@ -349,6 +351,17 @@[m [mclass AudioControlsService : MediaSessionService() {[m
+     @Volatile[m
+     private var instance: AudioControlsService? = null[m
+ [m
+[32m+[m[32m    @Volatile[m
+[32m+[m[32m    private var actionListener: ((String) -> Unit)? = null[m
+[32m+[m
+[32m+[m[32m    fun setActionListener(listener: ((String) -> Unit)?) {[m
+[32m+[m[32m      actionListener = listener[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    fun dispatchAction(action: String) {[m
+[32m+[m[32m      actionListener?.invoke(action)[m
+[32m+[m[32m    }[m
+[32m+[m
+     fun getInstance(): AudioControlsService? = instance[m
+ [m
+     fun setActivePlayer([m
+[1mdiff --git a/android/src/main/java/expo/modules/audio/service/AudioMediaSessionCallback.kt b/android/src/main/java/expo/modules/audio/service/AudioMediaSessionCallback.kt[m
+[1mindex 839aaef12d7699ea1a89037b31849775daa079f4..7b87fb42a941eaee60fcad22b70074f2fa748b6e 100644[m
+[1m--- a/android/src/main/java/expo/modules/audio/service/AudioMediaSessionCallback.kt[m
+[1m+++ b/android/src/main/java/expo/modules/audio/service/AudioMediaSessionCallback.kt[m
+[36m@@ -35,6 +35,8 @@[m [mclass AudioMediaSessionCallback : MediaSession.Callback {[m
+           MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS.buildUpon()[m
+             .add(SessionCommand(AudioControlsService.ACTION_SEEK_BACKWARD, Bundle.EMPTY))[m
+             .add(SessionCommand(AudioControlsService.ACTION_SEEK_FORWARD, Bundle.EMPTY))[m
+[32m+[m[32m            .add(SessionCommand(AudioControlsService.ACTION_SKIP_PREVIOUS, Bundle.EMPTY))[m
+[32m+[m[32m            .add(SessionCommand(AudioControlsService.ACTION_SKIP_NEXT, Bundle.EMPTY))[m
+             .build()[m
+         )[m
+         .build()[m
+[36m@@ -56,6 +58,8 @@[m [mclass AudioMediaSessionCallback : MediaSession.Callback {[m
+       AudioControlsService.ACTION_SEEK_BACKWARD -> {[m
+         session.player.seekTo(session.player.currentPosition - AudioControlsService.SEEK_INTERVAL_MS)[m
+       }[m
+[32m+[m[32m      AudioControlsService.ACTION_SKIP_PREVIOUS -> AudioControlsService.dispatchAction("previous")[m
+[32m+[m[32m      AudioControlsService.ACTION_SKIP_NEXT -> AudioControlsService.dispatchAction("next")[m
+     }[m
+     return super.onCustomCommand(session, controller, command, args)[m
+   }[m
+[1mdiff --git a/src/AudioConstants.ts b/src/AudioConstants.ts[m
+[1mindex 72a157c4efd88465ff6d5d203181d50acfb055ff..6f2c4f1f8a3981560cd30ace130ee49980793661 100644[m
+[1m--- a/src/AudioConstants.ts[m
+[1m+++ b/src/AudioConstants.ts[m
+[36m@@ -3,6 +3,10 @@[m
+  * Options for configuring which playback controls should be displayed on the lock screen.[m
+  */[m
+ export type AudioLockScreenOptions = {[m
+[32m+[m[32m  /** Whether the previous-track button should be displayed on the lock screen. */[m
+[32m+[m[32m  showPrevious?: boolean;[m
+[32m+[m[32m  /** Whether the next-track button should be displayed on the lock screen. */[m
+[32m+[m[32m  showNext?: boolean;[m
+   /**[m
+    * Whether the seek forward button should be displayed on the lock screen.[m
+    */[m
+[1mdiff --git a/src/ExpoAudio.ts b/src/ExpoAudio.ts[m
+[1mindex 9bf0f432f947513d612aa27e6e1197399d0b9222..d23ac05399ffe409e3bf9139e7dfee539101021a 100644[m
+[1m--- a/src/ExpoAudio.ts[m
+[1m+++ b/src/ExpoAudio.ts[m
+[36m@@ -42,6 +42,19 @@[m [mAudioModule.AudioPlayer.prototype.setPlaybackRate = function ([m
+   }[m
+ };[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Subscribes to the previous/next actions selected in Android lock-screen controls.[m
+[32m+[m[32m * The returned subscription removes the listener when no longer needed.[m
+[32m+[m[32m */[m
+[32m+[m[32mexport function addLockScreenActionListener(listener: (event: { action: 'previous' | 'next' }) => void) {[m
+[32m+[m[32m  return (AudioModule as unknown as {[m
+[32m+[m[32m    addListener: ([m
+[32m+[m[32m      eventName: string,[m
+[32m+[m[32m      callback: (event: { action: 'previous' | 'next' }) => void[m
+[32m+[m[32m    ) => { remove: () => void };[m
+[32m+[m[32m  }).addListener('lockScreenAction', listener);[m
+[32m+[m[32m}[m
+[32m+[m
+ // Audio recording prototypes should not be shimmed on tvOS, where they do not exist[m
+ if (!Platform.isTV || Platform.OS !== 'ios') {[m
+   const prepareToRecordAsync = AudioModule.AudioRecorder.prototype.prepareToRecordAsync;[m
