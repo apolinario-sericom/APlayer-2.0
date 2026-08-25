@@ -329,6 +329,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   
   }, [duration, getNextId, playTrack]);
 
+  useEffect(() => {
+    playNextRef.current = playNext;
+  }, [playNext]);
+
   const playPrevious = useCallback(async () => {
     if (position > 4) {
       await playerRef.current?.seekTo(0);
