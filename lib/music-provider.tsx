@@ -197,15 +197,54 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const getNextId = useCallback((direction: 1 | -1) => {
-    const visibleIds = dataRef.current.tracks.filter((track) => !track.hidden).map((track) => track.id);
-    const activeQueue = queueRef.current.length > 0 ? queueRef.current.filter((id) => visibleIds.includes(id)) : visibleIds;
+    const visibleIds = dataRef.current.tracks
+      .filter((track) => !track.hidden)
+      .map((track) => track.id);
+  
+    const savedQueue = queueRef.current.filter((id) =>
+      visibleIds.includes(id)
+    );
+  
+    // Se a fila atual estiver vazia ou não contiver a música atual,
+    // reconstrói a fila usando todas as músicas visíveis.
     const currentId = currentTrackRef.current;
-    if (!currentId || activeQueue.length === 0) return undefined;
-    if (shuffleRef.current && direction === 1 && activeQueue.length > 1) {
-      const alternatives = activeQueue.filter((id) => id !== currentId);
-      return alternatives[Math.floor(Math.random() * alternatives.length)];
+  
+    let activeQueue =
+      savedQueue.length > 0
+        ? savedQueue
+        : visibleIds;
+  
+    if (currentId && !activeQueue.includes(currentId)) {
+      activeQueue = visibleIds;
     }
-    return getAdjacentTrackId(activeQueue, currentId, direction, repeatRef.current === "all");
+  
+    if (!currentId || activeQueue.length === 0) {
+      return undefined;
+    }
+  
+    // Modo aleatório
+    if (
+      shuffleRef.current &&
+      direction === 1 &&
+      activeQueue.length > 1
+    ) {
+      const alternatives = activeQueue.filter(
+        (id) => id !== currentId
+      );
+  
+      return alternatives[
+        Math.floor(Math.random() * alternatives.length)
+      ];
+    }
+  
+    const nextId = getAdjacentTrackId(
+      activeQueue,
+      currentId,
+      direction,
+      repeatRef.current === "all"
+    );
+  
+    return nextId;
   }, []);
 
   const playTrack = useCallback(async (trackId: string, providedQueue?: string[]) => {
@@ -254,18 +293,41 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   }, [applySoundProfile, disposeActivePlayers]);
 
   const playNext = useCallback(async () => {
-    if (repeatRef.current === "one" && currentTrackRef.current) {
-      await playerRef.current?.seekTo(0);
-      playerRef.current?.play();
+    const currentId = currentTrackRef.current;
+  
+    if (!currentId) {
+      setIsPlaying(false);
       return;
     }
+  
+    // Repetir somente a música atual
+    if (repeatRef.current === "one") {
+      const player = playerRef.current;
+  
+      if (player) {
+        await player.seekTo(0);
+        player.play();
+        setPosition(0);
+        setIsPlaying(true);
+      }
+  
+      return;
+    }
+  
     const next = getNextId(1);
-    if (next) await playTrack(next, queueRef.current);
-  }, [getNextId, playTrack]);
-
-  useEffect(() => {
-    playNextRef.current = playNext;
-  }, [playNext]);
+  
+    // Existe próxima música
+    if (next) {
+      await playTrack(next, queueRef.current);
+      return;
+    }
+  
+    // Chegou ao fim da fila.
+    // O player para normalmente.
+    setIsPlaying(false);
+    setPosition(duration);
+  
+  }, [duration, getNextId, playTrack]);
 
   const playPrevious = useCallback(async () => {
     if (position > 4) {
