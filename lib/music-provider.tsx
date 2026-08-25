@@ -266,18 +266,33 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       currentTrackRef.current = trackId;
       queueRef.current = resolvedQueue.map((entry) => entry.id);
       await applySoundProfile(player);
-      if (Platform.OS !== "web") {
-        player.setActiveForLockScreen(true, {
-          title: track.title,
-          artist: track.artist,
-          albumTitle: track.album,
-          artworkUrl: track.artworkUri,
-        }, LOCK_SCREEN_QUEUE_CONTROLS);
-        player.addListener("playbackStatusUpdate", (status) => {
-          if (!status.didJustFinish || playerRef.current !== player || finishedPlayersRef.current.has(player)) return;
-          finishedPlayersRef.current.add(player);
+      const finishSubscription = player.addListener(
+        "playbackStatusUpdate",
+        (status) => {
+          if (playerRef.current !== player) return;
+      
+          if (!status.didJustFinish) return;
+      
+          // Remove o listener desta faixa antes de trocar de música.
+          // Assim, o evento de término não fica preso nem dispara
+          // novamente para a próxima faixa.
+          finishSubscription.remove();
+      
           void playNextRef.current();
-        });
+        },
+      );
+      
+      if (Platform.OS !== "web") {
+        player.setActiveForLockScreen(
+          true,
+          {
+            title: track.title,
+            artist: track.artist,
+            albumTitle: track.album,
+            artworkUrl: track.artworkUri,
+          },
+          LOCK_SCREEN_QUEUE_CONTROLS,
+        );
       }
       player.play();
       setCurrentTrackId(trackId);
@@ -355,21 +370,21 @@ export function MusicProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const identifier = setInterval(() => {
       const player = playerRef.current;
+  
       if (!player) return;
+  
       const nextPosition = Number(player.currentTime ?? 0);
       const nextDuration = Number(player.duration ?? 0);
+  
       setPosition(nextPosition);
-      if (nextDuration > 0) setDuration(nextDuration);
-      setIsPlaying(Boolean(player.playing));
-
-      // Alguns dispositivos não propagam o evento de fim no mesmo instante em que
-      // o ExoPlayer muda para STATE_ENDED. Este segundo caminho garante a próxima
-      // faixa sem criar dois players simultâneos.
-      if (nextDuration > 0 && nextPosition >= nextDuration - 0.35 && !player.playing && !finishedPlayersRef.current.has(player)) {
-        finishedPlayersRef.current.add(player);
-        void playNextRef.current();
+  
+      if (nextDuration > 0) {
+        setDuration(nextDuration);
       }
-    }, 400);
+  
+      setIsPlaying(Boolean(player.playing));
+    }, 500);
+  
     return () => clearInterval(identifier);
   }, []);
 
